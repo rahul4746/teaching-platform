@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+  ADMIN
+}
+
+enum VideoStatus {
+  PROCESSING
+  READY
+  ERROR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?  @db.VarChar(100)
+  email        String   @unique @db.VarChar(254)
+  passwordHash String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  videos        Video[]         @relation("TeacherVideos")
+  enrollments   Enrollment[]    @relation("StudentEnrollments")
+  videoProgress VideoProgress[] @relation("StudentVideoProgress")
+
+  @@index([role])
+}
+
+model Video {
+  id           String      @id @default(cuid())
+  title        String      @db.VarChar(140)
+  description  String?     @db.Text
+  thumbnailUrl String?     @db.Text
+  videoUrl     String      @db.Text
+  storageKey   String?     @db.Text
+  duration     Int?
+  size         BigInt      @default(0)
+  mimeType     String      @default("video/mp4") @db.VarChar(127)
+  status       VideoStatus @default(PROCESSING)
+  category     String?     @db.VarChar(80)
+  tags         String[]    @default([])
+  isPublic     Boolean     @default(false)
+  viewCount    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  teacherId String
+  teacher   User   @relation("TeacherVideos", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  enrollments Enrollment[]    @relation("VideoEnrollments")
+  progress    VideoProgress[] @relation("VideoProgress")
+
+  @@index([teacherId])
+  @@index([status])
+  @@index([isPublic])
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  videoId   String
+  studentId String
+  grantedAt DateTime @default(now())
+
+  video   Video @relation("VideoEnrollments", fields: [videoId], references: [id], onDelete: Cascade)
+  student User  @relation("StudentEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, studentId])
+  @@index([studentId])
+}
+
+model VideoProgress {
+  id          String   @id @default(cuid())
+  videoId     String
+  studentId   String
+  currentTime Int      @default(0)
+  completed   Boolean  @default(false)
+  lastWatched DateTime @default(now())
+
+  video   Video @relation("VideoProgress", fields: [videoId], references: [id], onDelete: Cascade)
+  student User  @relation("StudentVideoProgress", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, studentId])
+  @@index([studentId])
+  @@index([videoId])
+}
