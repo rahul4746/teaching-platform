@@ -4,21 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, Video, Users, Eye, Settings } from "lucide-react";
 import Link from "next/link";
+import { DEMO_MODE, demoVideos } from "@/lib/demo-data";
 
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session?.user.id;
 
-  const stats = await db.$transaction([
+  const stats = DEMO_MODE ? null : await db.$transaction([
     db.video.count({ where: { teacherId: userId } }),
     db.enrollment.count({ where: { video: { teacherId: userId } } }),
-    db.video.aggregate({
-      where: { teacherId: userId },
-      _sum: { viewCount: true }
-    })
+    db.video.aggregate({ where: { teacherId: userId }, _sum: { viewCount: true } }),
   ]);
 
-  const [videoCount, studentCount, viewData] = stats;
+  const videoCount = stats ? stats[0] : demoVideos.length;
+  const studentCount = stats ? stats[1] : 12;
+  const viewCount = stats ? stats[2]._sum.viewCount || 0 : demoVideos.reduce((sum, video) => sum + video.viewCount, 0);
 
   return (
     <div className="space-y-8">
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{viewData._sum.viewCount || 0}</div>
+            <div className="text-2xl font-bold">{viewCount}</div>
             <p className="text-xs text-muted-foreground">
               Across all content
             </p>
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
           <CardContent>
              <div className="flex flex-col items-center justify-center py-10 text-center">
                 <Video className="h-10 w-10 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">No videos uploaded yet.</p>
+                <p className="text-muted-foreground">{DEMO_MODE ? `${demoVideos.length} sample lessons ready to explore.` : "No videos uploaded yet."}</p>
                 <Link href="/dashboard/upload" className="mt-4">
                   <Button variant="outline" size="sm">Upload your first video</Button>
                 </Link>

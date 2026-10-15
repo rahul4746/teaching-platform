@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Video, Eye, Clock } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { DEMO_MODE, demoVideos } from "@/lib/demo-data";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function VideosPage() {
     return null;
   }
 
-  const videos = await db.video.findMany({
+  const videos = DEMO_MODE ? demoVideos : await db.video.findMany({
     where: { teacherId: session.user.id },
     orderBy: { createdAt: "desc" },
     select: {

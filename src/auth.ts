@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/security";
 import { credentialsSchema } from "@/lib/validation";
 import { authRateLimiter } from "@/lib/rate-limit";
+import { DEMO_MODE, demoUser } from "@/lib/demo-data";
 
 // Used only to make failed lookups take approximately the same time as a
 // failed password check. It is not a credential or application secret.
@@ -39,7 +40,7 @@ function clearFailedLogins(email: string) {
   failedLoginStore.delete(email);
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/sign-in",
@@ -132,3 +133,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+export async function auth() {
+  if (DEMO_MODE) return { user: demoUser, expires: "2099-01-01T00:00:00.000Z" };
+  return nextAuth.auth();
+}

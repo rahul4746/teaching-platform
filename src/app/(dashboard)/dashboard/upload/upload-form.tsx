@@ -99,6 +99,13 @@ export default function UploadVideoForm({ userId }: UploadVideoFormProps) {
     setError(null);
 
     try {
+      if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        router.push("/dashboard/videos");
+        router.refresh();
+        return;
+      }
+
       const contentType = file.type || "video/mp4";
       const prepareResponse = await fetch("/api/videos/upload", {
         method: "POST",

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, User, Eye } from "lucide-react";
 
 import { canViewVideo } from "@/lib/authz";
+import { DEMO_MODE, demoUser, demoVideoUrl, demoVideos } from "@/lib/demo-data";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,12 @@ export default async function WatchPage({
   if (!session?.user) redirect("/sign-in");
 
   const userId = session.user.id;
+
+  if (DEMO_MODE) {
+    const demoVideo = demoVideos.find((video) => video.id === id);
+    if (!demoVideo) notFound();
+    return <div className="mx-auto max-w-4xl space-y-6"><VideoPlayer videoId={demoVideo.id} videoUrl={demoVideoUrl} title={demoVideo.title} /><Card><CardHeader><div className="flex items-start justify-between gap-4"><div><CardTitle className="text-2xl">{demoVideo.title}</CardTitle><div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground"><span className="flex items-center gap-1.5"><User className="h-4 w-4" />{demoUser.name}</span><span className="flex items-center gap-1.5"><Eye className="h-4 w-4" />{demoVideo.viewCount} views</span><Badge variant="secondary">{demoVideo.category}</Badge></div></div><Badge variant={demoVideo.isPublic ? "default" : "outline"}>{demoVideo.isPublic ? "Public" : "Private"}</Badge></div></CardHeader><CardContent className="text-sm leading-relaxed text-muted-foreground">{demoVideo.description}</CardContent></Card></div>;
+  }
 
   const video = await db.video.findUnique({
     where: { id },

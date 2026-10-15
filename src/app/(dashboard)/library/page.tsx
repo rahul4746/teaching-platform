@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Video, Play, Clock, Eye, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { DEMO_MODE, demoVideos } from "@/lib/demo-data";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,18 @@ export default async function LibraryPage() {
   }
 
   const userId = session.user.id;
+
+  if (DEMO_MODE) {
+    const allVideos = demoVideos.filter((video) => video.status === "READY");
+    return (
+      <div className="space-y-8">
+        <div><div className="flex items-center gap-2"><BookOpen className="h-6 w-6 text-primary" /><h2 className="text-3xl font-bold tracking-tight">My Library</h2></div><p className="mt-1 text-muted-foreground">Sample lessons shared with you by your teachers.</p></div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {allVideos.map((video) => <Link key={video.id} href={`/watch/${video.id}`} className="block"><Card className="group overflow-hidden transition-shadow hover:shadow-lg"><div className="relative flex aspect-video w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5"><Video className="h-10 w-10 text-primary/50" /><span className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/20"><Play className="h-10 w-10 text-white opacity-0 transition group-hover:opacity-100" /></span></div><CardHeader className="p-4 pb-2"><CardTitle className="line-clamp-1 text-base">{video.title}</CardTitle><CardDescription className="line-clamp-2 text-sm">{video.description}</CardDescription></CardHeader><CardFooter className="flex items-center justify-between p-4 pt-2 text-xs text-muted-foreground"><span>{video.teacher.name}</span><span className="flex items-center gap-1"><Eye className="h-3 w-3" />{video.viewCount}</span></CardFooter></Card></Link>)}
+        </div>
+      </div>
+    );
+  }
 
   // Videos the student is enrolled in, plus public videos
   const enrolledVideos = await db.video.findMany({
